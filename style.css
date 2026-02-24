@@ -26,5 +26,34 @@ body {
     position: relative;
     width: 100%;
     display: grid;
+    gap: 0.6em;
+}
+
+.card-container{
+    position: relative;
+    width: 6.25em;
+    height: 6.25em;
+    cursor: pointer;
+}
+
+.card-efore,
+.card-after{
+    position: absolute;
+    border-radius: 5px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #000000;
+    transition: transform 0.7s ease-out;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    -ms-border-radius: 5px;
+    -o-border-radius: 5px;
+    -webkit-transition: transform 0.7s ease-out;
+    -moz-transition: transform 0.7s ease-out;
+    -ms-transition: transform 0.7s ease-out;
+    -o-transition: transform 0.7s ease-out;
 }
 
