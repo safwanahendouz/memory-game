@@ -3,27 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Game</title>
-    <!-- Gogle Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Stylesheet -->
+    <title>Wild Memory — Jungle Card Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="Wrapper">
-        <div class="stats-container">
-            <div id="moves-count"></div>
-            <div id="time"></div>
+
+<div class="jungle-bg">
+    <div class="leaf leaf-1">🌿</div>
+    <div class="leaf leaf-2">🍃</div>
+    <div class="leaf leaf-3">🌿</div>
+    <div class="leaf leaf-4">🍃</div>
+    <div class="leaf leaf-5">🌴</div>
+</div>
+
+<div class="wrapper">
+    <header class="header">
+        <h1 class="logo">🌴 Wild Memory</h1>
+        <p class="tagline">Match the jungle creatures!</p>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat-pill">
+            <span class="stat-icon">👣</span>
+            <span id="moves-count">Moves: 0</span>
         </div>
-        <div class="game-container"></div>
-        <button id="stop" class="hide">Stop Game</button>
+        <div class="stat-pill">
+            <span class="stat-icon">⏱</span>
+            <span id="time">00:00</span>
+        </div>
+        <div class="stat-pill">
+            <span class="stat-icon">🏆</span>
+            <span id="pairs-count">Pairs: 0/8</span>
+        </div>
     </div>
+
+    <div class="game-container" id="game-container"></div>
+
     <div class="controls-container">
-        <p id="result"></p>
-        <button id="start">Start Game</button>
+        <div id="result" class="result-message"></div>
+        <div class="btn-group">
+            <button id="start" class="btn btn-start">▶ Start Game</button>
+            <button id="stop" class="btn btn-stop hide">⏹ Stop</button>
+        </div>
+        <div class="difficulty-row">
+            <label>Grid size:</label>
+            <button class="size-btn active" data-size="4">4×4</button>
+            <button class="size-btn" data-size="6">6×6</button>
+        </div>
     </div>
-    
-    <!-- Script -->
-    <script src="script.js"></script>
+</div>
+
+<!-- Win Modal -->
+<div class="modal-overlay" id="modal" aria-hidden="true">
+    <div class="modal">
+        <div class="modal-emoji">🎉</div>
+        <h2>You Won!</h2>
+        <p id="modal-stats"></p>
+        <button class="btn btn-start" id="play-again">Play Again</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
