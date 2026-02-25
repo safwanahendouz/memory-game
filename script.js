@@ -1,111 +1,235 @@
-const moves = document.getElementById("moves-count");
-const timeValue = document.getElementById("time");
-const startButton = document.getElementById("start");
-const stopButton = document.getElementById("stop");
-const gameContainer = document.querySelector(".game-container");
-const result = document.getElementById("result");
-const controls = document.querySelector(".controls-container");
-let cards;
-let interval;
-let firstCard = false;
-let secondCard = false;
+// === DOM References ===
+const movesEl = document.getElementById("moves-count");
+const timeEl = document.getElementById("time");
+const pairsEl = document.getElementById("pairs-count");
+const startBtn = document.getElementById("start");
+const stopBtn = document.getElementById("stop");
+const gameContainer = document.getElementById("game-container");
+const resultEl = document.getElementById("result");
+const modal = document.getElementById("modal");
+const modalStats = document.getElementById("modal-stats");
+const playAgainBtn = document.getElementById("play-again");
+const sizeBtns = document.querySelectorAll(".size-btn");
 
-// Items array
-const items = [
-    { name: "bee", image: "bee.png"},
-    { name: "crocodile", image: "crocodile.png"},
-    { name: "macaw", image: "macaw.png"},
-    { name: "gorilla", image: "gorilla.png"},
-    { name:"tiger", image: "tiger.png"},
-    { name:"monkey", image: "monkey.png"},
-    { name:"chameleon", image: "chameleon.png"},
-    { name:"piranha", image: "piranha.png"},
-    { name:"anaconda", image: "anaconda.png"},
-    { name:"sloth", image: "sloth.png"},
-    { name:"cockatoo", image: "cockatoo.png"},
-    { name:"toucan", image: "toucan.png"},
+// === Animal Data (emoji-based, no images needed) ===
+const animals = [
+    { name: "Bee",       emoji: "🐝" },
+    { name: "Croc",      emoji: "🐊" },
+    { name: "Macaw",     emoji: "🦜" },
+    { name: "Gorilla",   emoji: "🦍" },
+    { name: "Tiger",     emoji: "🐯" },
+    { name: "Monkey",    emoji: "🐒" },
+    { name: "Chameleon", emoji: "🦎" },
+    { name: "Piranha",   emoji: "🐟" },
+    { name: "Snake",     emoji: "🐍" },
+    { name: "Sloth",     emoji: "🦥" },
+    { name: "Cockatoo",  emoji: "🦚" },
+    { name: "Toucan",    emoji: "🦅" },
+    { name: "Frog",      emoji: "🐸" },
+    { name: "Parrot",    emoji: "🦩" },
+    { name: "Panther",   emoji: "🐆" },
+    { name: "Elephant",  emoji: "🐘" },
+    { name: "Hippo",     emoji: "🦛" },
+    { name: "Flamingo",  emoji: "🦢" },
 ];
 
-// initial Time
-let seconds = 0,
-minutes = 0;
+// === State ===
+let gridSize = 4;
+let seconds = 0, minutes = 0;
+let movesCount = 0, winCount = 0, totalPairs = 0;
+let interval = null;
+let firstCard = null, secondCard = null;
+let lockBoard = false;
+let gameActive = false;
 
-// Initial moves and win count
-let movesCount = 0,
-winCount = 0;
-
-// For timer
-const tomeGenerator = () => {
-    seconds += 1;
-    // minutes logic
-    if(seconds>= 60) {
-        minutes+= 1;
-        seconds= 0;
-    }
-};
-
-// format time before displaying
-let secondsValue = seconds < 10 ? `0${seconds}` :
-seconds;
-let minutesValue = minutes < 10 ? `0${seconds}` :
-minutes;
-timeValue.innerHTML = `<span>Time:</span>$
-{minutesValue}:${secondsValue}`;
-
-// For calculating moves
-const movesCounter = () => {
-    movesCount+= 1;
-    moves.innerHTML = `<span>Moves:</span>${movesCount}`;
+// === Timer ===
+function tickTimer() {
+    seconds++;
+    if (seconds >= 60) { minutes++; seconds = 0; }
+    const ss = String(seconds).padStart(2, '0');
+    const mm = String(minutes).padStart(2, '0');
+    timeEl.textContent = `${mm}:${ss}`;
 }
 
-// pick random objects from the items array
-const generateRandom = (size = 4) => {
-    // temporay array
-    let tempArray =[...items];
-    // initializes cardValues array
-    let cardValues = [];
-    // size should be double (4*4 matrix)/2 (with and height) since pairs of objects would selection
-    size = (size*size)/2;
-    // Random object selection
-    for (let i=0; i < size; i++) {
-        const randomIndex = Math.floor(Math.random() * tempArray.length);
-        cardValues.push(tempArray[randomIndex]);
-        // Once selected rmovethe object from temp
-        tempArray.splice(randomIndex, 1);
-    }
-    return cardValues;
-};
+function startTimer() {
+    clearInterval(interval);
+    seconds = 0; minutes = 0;
+    timeEl.textContent = "00:00";
+    interval = setInterval(tickTimer, 1000);
+}
 
-const matrixGenerator = (cardValues, size = 4) => {
-    gameContainer.innerHTML= "";
-    cardValues = [...cardValues, ...cardValues];
-    // simple shuffle
-    cardValues.sort(() => Math.random() - 0.5);
-    for (let i=0; i < size * size; i++) {
-        // Create Cards
-        // before => front side (contains Q mark)
-        // after => back side (contains actal image)
-        // data-card-values is a custom attribute which stores the names of the cards to match later
-        gameContainer.innerHTML += `
-        <div class="card-container" data-card-value="$
-        {cardValues[i].name}">
-        <div class="card-before">?</div>
-        <div class="card-after">
-        <img src="${cardValues[i].image}"
-        class="image"/></div>
-        </div>
-        `;
-    }
-    // Grid ::
-    gameContainer.computedStyleMap.gridTemplateColumns = `repeat($
-    {size},auto)`;
-};
+function stopTimer() {
+    clearInterval(interval);
+    interval = null;
+}
 
-// initialize values and func calls
-const initializer = () => {
-    result.innerHTML = "";
+// === Random card selection ===
+function generateRandom(size) {
+    const needed = (size * size) / 2;
+    const shuffled = [...animals].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, needed);
+}
+
+// === Build the grid ===
+function buildGrid(size) {
+    const pairs = generateRandom(size);
+    totalPairs = pairs.length;
     winCount = 0;
-    let cardValues = generateRandom();
-    console.log(cardValues);
-    matrixGenerator(cardValues);
-};
+    pairsEl.textContent = `Pairs: 0/${totalPairs}`;
+
+    let deck = [...pairs, ...pairs].sort(() => Math.random() - 0.5);
+
+    gameContainer.innerHTML = "";
+    // Card size adapts to grid
+    const cardPx = size === 4 ? "calc(min(17vw, 110px))" : "calc(min(11vw, 80px))";
+    gameContainer.style.gridTemplateColumns = `repeat(${size}, ${cardPx})`;
+
+    deck.forEach((animal) => {
+        const card = document.createElement("div");
+        card.className = "card-container";
+        card.dataset.value = animal.name;
+        card.style.width = cardPx;
+        card.style.height = cardPx;
+
+        card.innerHTML = `
+            <div class="card-inner">
+                <div class="card-before"></div>
+                <div class="card-after">
+                    <span class="card-emoji">${animal.emoji}</span>
+                    <span class="card-label">${animal.name}</span>
+                </div>
+            </div>`;
+
+        card.addEventListener("click", onCardClick);
+        gameContainer.appendChild(card);
+    });
+}
+
+// === Card click logic ===
+function onCardClick(e) {
+    if (!gameActive || lockBoard) return;
+    const card = e.currentTarget;
+    if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+    card.classList.add("flipped");
+
+    if (!firstCard) {
+        firstCard = card;
+        return;
+    }
+
+    secondCard = card;
+    movesCount++;
+    movesEl.textContent = `Moves: ${movesCount}`;
+
+    checkMatch();
+}
+
+function checkMatch() {
+    const isMatch = firstCard.dataset.value === secondCard.dataset.value;
+    if (isMatch) {
+        winCount++;
+        pairsEl.textContent = `Pairs: ${winCount}/${totalPairs}`;
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        resultEl.textContent = winCount === totalPairs ? "" : `✅ Match! Keep going!`;
+        resetPick();
+        if (winCount === totalPairs) setTimeout(onWin, 500);
+    } else {
+        lockBoard = true;
+        resultEl.textContent = "❌ No match, try again!";
+        const a = firstCard, b = secondCard;
+        a.classList.add("wrong");
+        b.classList.add("wrong");
+        setTimeout(() => {
+            a.classList.remove("flipped", "wrong");
+            b.classList.remove("flipped", "wrong");
+            resetPick();
+        }, 900);
+    }
+}
+
+function resetPick() {
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+}
+
+// === Win ===
+function onWin() {
+    stopTimer();
+    gameActive = false;
+    stopBtn.classList.add("hide");
+    startBtn.classList.remove("hide");
+
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+    modalStats.innerHTML = `⏱ Time: <strong>${mm}:${ss}</strong> &nbsp;|&nbsp; 👣 Moves: <strong>${movesCount}</strong>`;
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden", "false");
+    spawnConfetti();
+}
+
+// === Confetti ===
+function spawnConfetti() {
+    const colors = ["#f4c531","#4caf50","#ff6b6b","#61dafb","#ffffff","#ff9800"];
+    for (let i = 0; i < 70; i++) {
+        const el = document.createElement("div");
+        el.className = "confetti";
+        el.style.setProperty("--dur", `${1.5 + Math.random() * 2}s`);
+        el.style.setProperty("--delay", `${Math.random() * 0.8}s`);
+        el.style.left = `${Math.random() * 100}vw`;
+        el.style.top = "0";
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = `${6 + Math.random() * 6}px`;
+        el.style.height = `${6 + Math.random() * 6}px`;
+        document.body.appendChild(el);
+        el.addEventListener("animationend", () => el.remove());
+    }
+}
+
+// === Initialize / Start ===
+function startGame() {
+    movesCount = 0;
+    movesEl.textContent = "Moves: 0";
+    resultEl.textContent = "";
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+    gameActive = true;
+
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden", "true");
+
+    buildGrid(gridSize);
+    startTimer();
+
+    startBtn.classList.add("hide");
+    stopBtn.classList.remove("hide");
+}
+
+function stopGame() {
+    stopTimer();
+    gameActive = false;
+    resultEl.textContent = "Game stopped. Ready when you are!";
+    startBtn.classList.remove("hide");
+    stopBtn.classList.add("hide");
+    gameContainer.innerHTML = "";
+    timeEl.textContent = "00:00";
+    movesEl.textContent = "Moves: 0";
+    pairsEl.textContent = "Pairs: 0/8";
+}
+
+// === Event Listeners ===
+startBtn.addEventListener("click", startGame);
+stopBtn.addEventListener("click", stopGame);
+playAgainBtn.addEventListener("click", startGame);
+
+sizeBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+        sizeBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        gridSize = parseInt(btn.dataset.size);
+        if (gameActive) startGame();
+    });
+});
